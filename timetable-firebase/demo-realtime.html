@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Timetable Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .header p { font-size: 1.2rem; opacity: 0.9; }
+        .panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 30px; }
+        @media (max-width: 1024px) { .panels { grid-template-columns: 1fr; } }
+        
+        .panel { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: transform 0.3s ease; }
+        .panel:hover { transform: translateY(-5px); }
+        .panel-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0; }
+        .panel-title { font-size: 1.4rem; font-weight: bold; }
+        
+        .admin { border-top: 5px solid #f59e0b; }
+        .admin .panel-title { color: #f59e0b; }
+        .student { border-top: 5px solid #3b82f6; }
+        .student .panel-title { color: #3b82f6; }
+        .faculty { border-top: 5px solid #10b981; }
+        .faculty .panel-title { color: #10b981; }
+        
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease; margin: 5px; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .btn-admin { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .btn-student { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .btn-faculty { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        
+        .updates { background: #f8fafc; border-radius: 10px; padding: 15px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
+        .update { background: white; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 4px solid #e5e7eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .update.new { border-left-color: #10b981; animation: slideIn 0.5s ease; }
+        .update.live { border-left-color: #ef4444; background: #fef2f2; }
+        
+        .timetable-preview { background: linear-gradient(135deg, #e0f2fe, #b3e5fc); padding: 20px; border-radius: 12px; margin: 15px 0; }
+        .timetable-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
+        .time-slot { background: white; padding: 10px; border-radius: 6px; text-align: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        
+        .status-bar { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 20px; border-radius: 15px; text-align: center; }
+        .status-indicator { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+        .pulse { width: 12px; height: 12px; background: #10b981; border-radius: 50%; animation: pulse 2s infinite; }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        
+        .stats { display: flex; justify-content: space-around; margin: 15px 0; }
+        .stat { text-align: center; }
+        .stat-number { font-size: 1.5rem; font-weight: bold; color: #374151; }
+        .stat-label { font-size: 0.9rem; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔄 Real-Time Timetable Synchronization</h1>
+            <p>Demonstrating live connection between Admin, Student, and Faculty panels</p>
+        </div>
+        
+        <div class="panels">
+            <!-- Admin Panel -->
+            <div class="panel admin">
+                <div class="panel-header">
+                    <span style="font-size: 2rem;">👨‍💼</span>
+                    <div class="panel-title">Admin Panel</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-admin" onclick="publishTimetable()">📅 Publish Timetable</button>
+                    <button class="btn btn-admin" onclick="startLiveClass()">🔴 Start Live Class</button>
+                    <button class="btn btn-admin" onclick="sendAnnouncement()">📢 Send Announcement</button>
+                    <button class="btn btn-danger" onclick="clearAll()">🗑️ Clear All</button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number" id="publishCount">0</div>
+                        <div class="stat-label">Published</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="liveCount">0</div>
+                        <div class="stat-label">Live Classes</div>
+                    </div>
+                </div>
+                
+                <div class="updates">
+                    <strong>📋 Admin Actions:</strong>
+                    <div id="adminLog"></div>
+                </div>
+            </div>
+
+            <!-- Student Panel -->
+            <div class="panel student">
+                <div class="panel-header">
+                    <span style="font-size: 2rem;">👨‍🎓</span>
+                    <div class="panel-title">Student Panel</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-student" onclick="markAsRead('student')">✅ Mark Read</button>
+                    <button class="btn btn-student" onclick="refreshData('student')">🔄 Refresh</button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number" id="studentUpdates">0</div>
+                        <div class="stat-label">New Updates</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="studentTimetables">0</div>
+                        <div class="stat-label">Timetables</div>
+                    </div>
+                </div>
+                
+                <div class="updates">
+                    <strong>📨 Received Updates:</strong>
+                    <div id="studentLog"></div>
+                </div>
+                
+                <div id="studentTimetable" class="timetable-preview" style="display:none;">
+                    <strong>📅 Current Timetable:</strong>
+                    <div id="studentTimetableData"></div>
+                    <div class="timetable-grid" id="studentGrid"></div>
+                </div>
+            </div>
+
+            <!-- Faculty Panel -->
+            <div class="panel faculty">
+                <div class="panel-header">
+                    <span style="font-size: 2rem;">👩‍🏫</span>
+                    <div class="panel-title">Faculty Panel</div>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn btn-faculty" onclick="markAsRead('faculty')">✅ Mark Read</button>
+                    <button class="btn btn-faculty" onclick="refreshData('faculty')">🔄 Refresh</button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-number" id="facultyUpdates">0</div>
+                        <div class="stat-label">New Updates</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number" id="facultyTimetables">0</div>
+                        <div class="stat-label">Timetables</div>
+                    </div>
+                </div>
+                
+                <div class="updates">
+                    <strong>📨 Received Updates:</strong>
+                    <div id="facultyLog"></div>
+                </div>
+                
+                <div id="facultyTimetable" class="timetable-preview" style="display:none;">
+                    <strong>📅 Current Timetable:</strong>
+                    <div id="facultyTimetableData"></div>
+                    <div class="timetable-grid" id="facultyGrid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="pulse"></div>
+                <span>Real-Time Connection Active</span>
+            </div>
+            <p style="margin-top: 10px; color: #6b7280;">
+                Open this page in multiple tabs to see cross-tab synchronization in action!
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let publishCounter = 0;
+        let liveCounter = 0;
+        let studentUpdateCounter = 0;
+        let facultyUpdateCounter = 0;
+        let studentTimetableCounter = 0;
+        let facultyTimetableCounter = 0;
+
+        // Mock subjects and rooms
+        const subjects = ['Mathematics', 'Physics', 'Chemistry', 'Computer Science', 'English', 'Economics'];
+        const rooms = ['CS-101', 'CS-102', 'LAB-1', 'LAB-2', 'AUD-MAIN'];
+        const faculty = ['Dr. Smith', 'Dr. Johnson', 'Prof. Williams', 'Dr. Brown'];
+
+        function generateMockTimetable() {
+            const schedule = [];
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            
+            days.forEach((day, dayIndex) => {
+                for (let slot = 1; slot <= 4; slot++) {
+                    schedule.push({
+                        slot: slot,
+                        day: day,
+                        subject: subjects[Math.floor(Math.random() * subjects.length)],
+                        room: rooms[Math.floor(Math.random() * rooms.length)],
+                        faculty: faculty[Math.floor(Math.random() * faculty.length)],
+                        time: `${8 + slot}:00 - ${9 + slot}:00`
+                    });
+                }
+            });
+            
+            return {
+                id: `timetable-${Date.now()}`,
+                timestamp: Date.now(),
+                schedule: schedule,
+                score: Math.floor(Math.random() * 20) + 80
+            };
+        }
+
+        function publishTimetable() {
+            const timetable = generateMockTimetable();
+            publishCounter++;
+            
+            const update = {
+                id: `update-${Date.now()}`,
+                type: 'timetable_change',
+                timestamp: Date.now(),
+                message: `📅 New timetable published (ID: ${timetable.id.slice(-8)})`,
+                affectedUsers: ['student', 'faculty'],
+                data: timetable
+            };
+            
+            // Save to localStorage
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(update);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            localStorage.setItem('currentTimetable', JSON.stringify(timetable));
+            
+            // Update UI
+            addToLog('adminLog', `✅ Published: ${update.message}`, 'admin');
+            document.getElementById('publishCount').textContent = publishCounter;
+            
+            // Trigger events
+            triggerStorageEvent('timetableUpdates', updates);
+            triggerStorageEvent('currentTimetable', timetable);
+        }
+
+        function startLiveClass() {
+            liveCounter++;
+            const subject = subjects[Math.floor(Math.random() * subjects.length)];
+            const room = rooms[Math.floor(Math.random() * rooms.length)];
+            
+            const liveClass = {
+                id: `live-${Date.now()}`,
+                type: 'live_class',
+                timestamp: Date.now(),
+                message: `🔴 Live class started: ${subject} in ${room}`,
+                affectedUsers: ['student', 'faculty'],
+                data: { subject, room, faculty: faculty[Math.floor(Math.random() * faculty.length)] }
+            };
+            
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(liveClass);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            addToLog('adminLog', `🔴 Started: ${liveClass.message}`, 'admin');
+            document.getElementById('liveCount').textContent = liveCounter;
+            
+            triggerStorageEvent('timetableUpdates', updates);
+        }
+
+        function sendAnnouncement() {
+            const messages = [
+                'Important: Please check your updated schedules',
+                'Reminder: Submit your assignments by Friday',
+                'Notice: Library will be closed tomorrow',
+                'Update: New course materials available'
+            ];
+            
+            const announcement = {
+                id: `announcement-${Date.now()}`,
+                type: 'announcement',
+                timestamp: Date.now(),
+                message: `📢 ${messages[Math.floor(Math.random() * messages.length)]}`,
+                affectedUsers: ['student', 'faculty'],
+                data: { priority: 'normal' }
+            };
+            
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(announcement);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            addToLog('adminLog', `📢 Sent: ${announcement.message}`, 'admin');
+            triggerStorageEvent('timetableUpdates', updates);
+        }
+
+        function clearAll() {
+            localStorage.clear();
+            document.querySelectorAll('[id$="Log"]').forEach(log => log.innerHTML = '');
+            document.querySelectorAll('.timetable-preview').forEach(tp => tp.style.display = 'none');
+            
+            // Reset counters
+            publishCounter = liveCounter = studentUpdateCounter = facultyUpdateCounter = 0;
+            studentTimetableCounter = facultyTimetableCounter = 0;
+            updateCounters();
+            
+            addToLog('adminLog', '🗑️ All data cleared', 'admin');
+        }
+
+        function markAsRead(userType) {
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            const readUpdates = updates.map(u => u.id);
+            localStorage.setItem(`${userType}ReadUpdates`, JSON.stringify(readUpdates));
+            
+            addToLog(`${userType}Log`, `✅ All updates marked as read`, userType);
+            
+            if (userType === 'student') {
+                studentUpdateCounter = 0;
+                document.getElementById('studentUpdates').textContent = '0';
+            } else {
+                facultyUpdateCounter = 0;
+                document.getElementById('facultyUpdates').textContent = '0';
+            }
+        }
+
+        function refreshData(userType) {
+            loadExistingData();
+            addToLog(`${userType}Log`, `🔄 Data refreshed at ${new Date().toLocaleTimeString()}`, userType);
+        }
+
+        function triggerStorageEvent(key, data) {
+            // Simulate cross-tab storage event
+            setTimeout(() => {
+                window.dispatchEvent(new StorageEvent('storage', {
+                    key: key,
+                    newValue: JSON.stringify(data),
+                    oldValue: null,
+                    storageArea: localStorage,
+                    url: window.location.href
+                }));
+            }, 50);
+        }
+
+        function addToLog(logId, message, type) {
+            const log = document.getElementById(logId);
+            const div = document.createElement('div');
+            div.className = type === 'admin' ? 'update' : 'update new';
+            if (message.includes('🔴')) div.classList.add('live');
+            
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>${message}</span>
+                    <small style="color: #6b7280;">${new Date().toLocaleTimeString()}</small>
+                </div>
+            `;
+            
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateCounters() {
+            document.getElementById('publishCount').textContent = publishCounter;
+            document.getElementById('liveCount').textContent = liveCounter;
+            document.getElementById('studentUpdates').textContent = studentUpdateCounter;
+            document.getElementById('facultyUpdates').textContent = facultyUpdateCounter;
+            document.getElementById('studentTimetables').textContent = studentTimetableCounter;
+            document.getElementById('facultyTimetables').textContent = facultyTimetableCounter;
+        }
+
+        function displayTimetable(timetable, userType) {
+            const timetableDiv = document.getElementById(`${userType}Timetable`);
+            const dataDiv = document.getElementById(`${userType}TimetableData`);
+            const gridDiv = document.getElementById(`${userType}Grid`);
+            
+            timetableDiv.style.display = 'block';
+            dataDiv.innerHTML = `
+                <strong>ID:</strong> ${timetable.id.slice(-8)} | 
+                <strong>Score:</strong> ${timetable.score}% | 
+                <strong>Classes:</strong> ${timetable.schedule.length}
+            `;
+            
+            // Display first 8 classes in grid
+            gridDiv.innerHTML = '';
+            timetable.schedule.slice(0, 8).forEach(item => {
+                const slot = document.createElement('div');
+                slot.className = 'time-slot';
+                slot.innerHTML = `
+                    <div style="font-weight: bold; color: #374151;">${item.subject}</div>
+                    <div style="color: #6b7280; margin: 2px 0;">${item.room}</div>
+                    <div style="color: #9ca3af; font-size: 10px;">${item.time}</div>
+                `;
+                gridDiv.appendChild(slot);
+            });
+            
+            if (userType === 'student') {
+                studentTimetableCounter++;
+            } else {
+                facultyTimetableCounter++;
+            }
+            updateCounters();
+        }
+
+        function loadExistingData() {
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            const currentTimetable = JSON.parse(localStorage.getItem('currentTimetable') || 'null');
+            
+            // Load updates
+            updates.forEach(update => {
+                if (update.affectedUsers.includes('student')) {
+                    addToLog('studentLog', `📨 ${update.message}`, 'student');
+                }
+                if (update.affectedUsers.includes('faculty')) {
+                    addToLog('facultyLog', `📨 ${update.message}`, 'faculty');
+                }
+            });
+            
+            // Load current timetable
+            if (currentTimetable) {
+                displayTimetable(currentTimetable, 'student');
+                displayTimetable(currentTimetable, 'faculty');
+            }
+            
+            // Update counters
+            studentUpdateCounter = updates.filter(u => u.affectedUsers.includes('student')).length;
+            facultyUpdateCounter = updates.filter(u => u.affectedUsers.includes('faculty')).length;
+            updateCounters();
+        }
+
+        // Listen for storage changes (cross-tab sync)
+        window.addEventListener('storage', function(e) {
+            console.log('🔄 Storage event received:', e.key);
+            
+            if (e.key === 'timetableUpdates' && e.newValue) {
+                const updates = JSON.parse(e.newValue);
+                const latestUpdate = updates[updates.length - 1];
+                
+                if (latestUpdate && Date.now() - latestUpdate.timestamp < 10000) {
+                    if (latestUpdate.affectedUsers.includes('student')) {
+                        addToLog('studentLog', `📨 LIVE: ${latestUpdate.message}`, 'student');
+                        studentUpdateCounter++;
+                    }
+                    if (latestUpdate.affectedUsers.includes('faculty')) {
+                        addToLog('facultyLog', `📨 LIVE: ${latestUpdate.message}`, 'faculty');
+                        facultyUpdateCounter++;
+                    }
+                    updateCounters();
+                }
+            }
+            
+            if (e.key === 'currentTimetable' && e.newValue) {
+                const timetable = JSON.parse(e.newValue);
+                displayTimetable(timetable, 'student');
+                displayTimetable(timetable, 'faculty');
+                
+                addToLog('studentLog', `📅 LIVE: New timetable received!`, 'student');
+                addToLog('facultyLog', `📅 LIVE: New timetable received!`, 'faculty');
+            }
+        });
+
+        // Initialize on load
+        window.addEventListener('load', function() {
+            loadExistingData();
+            console.log('🚀 Real-time timetable demo initialized');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "version": 3,
+  "sources": [],
+  "sections": [
+    {"offset": {"line": 7, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/agarw/OneDrive/Desktop/Timetable%20management/src/app/timetable/page.tsx"],"sourcesContent":["'use client';\n\nimport { DashboardLayout } from '@/components/dashboard/dashboard-layout';\nimport { ModernTimetablePanel } from '@/components/timetable/modern-timetable-panel';\nimport { SubjectSelectionPanel } from '@/components/timetable/subject-selection-panel';\n\nexport default function TimetablePage() {\n  return (\n    <div className=\"container mx-auto p-4 space-y-6\">\n      <div className=\"flex flex-col space-y-2\">\n        <h1 className=\"text-3xl font-bold tracking-tight\">Timetable Management</h1>\n        <p className=\"text-muted-foreground\">\n          Generate and manage academic timetables with AI-powered optimization.\n        </p>\n      </div>\n      \n      <TimetableGenerator />\n    </div>\n  );\n}"],"names":[],"mappings":";;;;AAAA;;AAMe,SAAS;IACtB,qBACE,8OAAC;QAAI,WAAU;;0BACb,8OAAC;gBAAI,WAAU;;kCACb,8OAAC;wBAAG,WAAU;kCAAoC;;;;;;kCAClD,8OAAC;wBAAE,WAAU;kCAAwB;;;;;;;;;;;;0BAKvC,8OAAC;;;;;;;;;;;AAGP","debugId":null}}]
+}

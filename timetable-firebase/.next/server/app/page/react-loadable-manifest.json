@@ -1,0 +1,22 @@
+{
+  "[project]/src/components/dashboard/class-heatmap.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/src/components/dashboard/class-heatmap.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/node_modules_lodash_a40f6c97._.js",
+      "static/chunks/node_modules_recharts_es6_81311589._.js",
+      "static/chunks/node_modules_b2a78104._.js",
+      "static/chunks/src_components_94963e8c._.js",
+      "static/chunks/src_components_dashboard_class-heatmap_tsx_a9b0e689._.js"
+    ]
+  },
+  "[project]/src/components/dashboard/weekly-overview-chart.tsx [app-client] (ecmascript, next/dynamic entry)": {
+    "id": "[project]/src/components/dashboard/weekly-overview-chart.tsx [app-client] (ecmascript, next/dynamic entry)",
+    "files": [
+      "static/chunks/node_modules_lodash_f240f67a._.js",
+      "static/chunks/node_modules_recharts_es6_8235043b._.js",
+      "static/chunks/node_modules_ff993561._.js",
+      "static/chunks/src_components_7b4e6399._.js",
+      "static/chunks/src_components_dashboard_weekly-overview-chart_tsx_a9b0e689._.js"
+    ]
+  }
+}

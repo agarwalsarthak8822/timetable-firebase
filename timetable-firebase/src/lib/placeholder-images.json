@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "user-avatar",
+      "description": "User avatar in the navigation bar",
+      "imageUrl": "https://picsum.photos/seed/user/40/40",
+      "imageHint": "profile picture"
+    },
+    {
+      "id": "recording-thumbnail",
+      "description": "Thumbnail for a class recording",
+      "imageUrl": "https://picsum.photos/seed/rec01/200/100",
+      "imageHint": "lecture hall"
+    }
+  ]
+}

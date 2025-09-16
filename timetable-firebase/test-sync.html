@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Sync Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .panel { background: white; border-radius: 8px; padding: 20px; margin: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .admin { border-left: 5px solid #f59e0b; }
+        .student { border-left: 5px solid #3b82f6; }
+        .faculty { border-left: 5px solid #10b981; }
+        button { padding: 12px 24px; margin: 8px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .admin button { background: #f59e0b; color: white; }
+        .student button { background: #3b82f6; color: white; }
+        .faculty button { background: #10b981; color: white; }
+        .updates { margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; max-height: 300px; overflow-y: auto; }
+        .update { padding: 10px; margin: 8px 0; border-left: 4px solid #6b7280; background: white; border-radius: 4px; }
+        .timetable { background: #e0f2fe; padding: 15px; border-radius: 6px; margin: 10px 0; }
+        .live { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Real-Time Timetable Sync Test</h1>
+        <p><strong>Test Instructions:</strong> Open this in multiple tabs. Use Admin to publish, see updates in Student/Faculty panels.</p>
+        
+        <div class="grid">
+            <!-- Admin Panel -->
+            <div class="panel admin">
+                <h2>👨‍💼 Admin Panel</h2>
+                <button onclick="publishTimetable()">📅 Publish Timetable</button>
+                <button onclick="startLiveClass()">🔴 Start Live Class</button>
+                <button onclick="sendAnnouncement()">📢 Send Announcement</button>
+                <button onclick="clearAll()">🗑️ Clear All</button>
+                
+                <div class="updates">
+                    <strong>Admin Actions:</strong>
+                    <div id="adminLog"></div>
+                </div>
+            </div>
+
+            <!-- Student Panel -->
+            <div class="panel student">
+                <h2>👨‍🎓 Student Panel</h2>
+                <button onclick="markAsRead('student')">✅ Mark Read</button>
+                <button onclick="refreshData('student')">🔄 Refresh</button>
+                
+                <div class="updates">
+                    <strong>Received Updates:</strong>
+                    <div id="studentLog"></div>
+                </div>
+                
+                <div id="studentTimetable" class="timetable" style="display:none;">
+                    <strong>Current Timetable:</strong>
+                    <div id="studentTimetableData"></div>
+                </div>
+            </div>
+
+            <!-- Faculty Panel -->
+            <div class="panel faculty">
+                <h2>👩‍🏫 Faculty Panel</h2>
+                <button onclick="markAsRead('faculty')">✅ Mark Read</button>
+                <button onclick="refreshData('faculty')">🔄 Refresh</button>
+                
+                <div class="updates">
+                    <strong>Received Updates:</strong>
+                    <div id="facultyLog"></div>
+                </div>
+                
+                <div id="facultyTimetable" class="timetable" style="display:none;">
+                    <strong>Current Timetable:</strong>
+                    <div id="facultyTimetableData"></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">
+            <p><span class="live">🟢</span> <strong>Real-Time Connection Active</strong></p>
+            <p><em>Changes will sync instantly across all tabs!</em></p>
+            <p>LocalStorage Keys: <span id="storageKeys"></span></p>
+        </div>
+    </div>
+
+    <script>
+        let updateCounter = 0;
+
+        // Mock timetable data
+        const mockTimetable = {
+            result: [{
+                summary: {
+                    classroomUtilization: 85,
+                    facultyLoadBalance: 90,
+                    studentConflictCount: 0
+                },
+                timetableId: `timetable-${Date.now()}`,
+                score: 95,
+                conflicts: [],
+                schedule: [
+                    { slot: 1, day: 'Monday', classroomId: 'CS-101', subjectId: 'math', facultyId: 'Dr. Smith', batch: 'B' },
+                    { slot: 2, day: 'Monday', classroomId: 'CS-102', subjectId: 'physics', facultyId: 'Dr. Johnson', batch: 'B' },
+                    { slot: 3, day: 'Tuesday', classroomId: 'CS-103', subjectId: 'chemistry', facultyId: 'Dr. Brown', batch: 'B' },
+                    { slot: 4, day: 'Tuesday', classroomId: 'CS-LAB1', subjectId: 'cslab', facultyId: 'Dr. Wilson', batch: 'B' }
+                ]
+            }],
+            message: "Real-time timetable generated successfully!"
+        };
+
+        function publishTimetable() {
+            const timetable = {
+                ...mockTimetable,
+                result: [{
+                    ...mockTimetable.result[0],
+                    timetableId: `timetable-${Date.now()}`,
+                    score: Math.floor(Math.random() * 10) + 90
+                }]
+            };
+            
+            const update = {
+                id: `update-${Date.now()}`,
+                type: 'timetable_change',
+                timestamp: Date.now(),
+                message: `New timetable published at ${new Date().toLocaleTimeString()}`,
+                affectedUsers: ['student', 'faculty'],
+                data: timetable
+            };
+            
+            // Save to localStorage
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(update);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            localStorage.setItem('currentTimetable', JSON.stringify(timetable));
+            
+            addToLog('adminLog', `✅ Published: ${update.message}`, 'admin');
+            
+            // Trigger events
+            triggerStorageEvent('timetableUpdates', updates);
+            triggerStorageEvent('currentTimetable', timetable);
+            updateStorageDisplay();
+        }
+
+        function startLiveClass() {
+            const liveClass = {
+                id: `live-${Date.now()}`,
+                type: 'live_class',
+                timestamp: Date.now(),
+                message: `🔴 Live class started: Computer Science in Room CS-101`,
+                affectedUsers: ['student', 'faculty'],
+                data: { subject: 'Computer Science', room: 'CS-101', faculty: 'Dr. Smith' }
+            };
+            
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(liveClass);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            addToLog('adminLog', `🔴 Started: ${liveClass.message}`, 'admin');
+            triggerStorageEvent('timetableUpdates', updates);
+            updateStorageDisplay();
+        }
+
+        function sendAnnouncement() {
+            const announcement = {
+                id: `announcement-${Date.now()}`,
+                type: 'announcement',
+                timestamp: Date.now(),
+                message: `📢 Important: Please check your updated schedules`,
+                affectedUsers: ['student', 'faculty'],
+                data: { priority: 'high' }
+            };
+            
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(announcement);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            addToLog('adminLog', `📢 Sent: ${announcement.message}`, 'admin');
+            triggerStorageEvent('timetableUpdates', updates);
+            updateStorageDisplay();
+        }
+
+        function clearAll() {
+            localStorage.removeItem('timetableUpdates');
+            localStorage.removeItem('currentTimetable');
+            document.getElementById('adminLog').innerHTML = '';
+            document.getElementById('studentLog').innerHTML = '';
+            document.getElementById('facultyLog').innerHTML = '';
+            document.getElementById('studentTimetable').style.display = 'none';
+            document.getElementById('facultyTimetable').style.display = 'none';
+            addToLog('adminLog', '🗑️ All data cleared', 'admin');
+            updateStorageDisplay();
+        }
+
+        function markAsRead(userType) {
+            const readUpdates = JSON.parse(localStorage.getItem(`${userType}ReadUpdates`) || '[]');
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            
+            updates.forEach(update => {
+                if (!readUpdates.includes(update.id)) {
+                    readUpdates.push(update.id);
+                }
+            });
+            
+            localStorage.setItem(`${userType}ReadUpdates`, JSON.stringify(readUpdates));
+            addToLog(`${userType}Log`, `✅ All updates marked as read`, userType);
+        }
+
+        function refreshData(userType) {
+            loadExistingData();
+            addToLog(`${userType}Log`, `🔄 Data refreshed`, userType);
+        }
+
+        function triggerStorageEvent(key, data) {
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: key,
+                newValue: JSON.stringify(data),
+                oldValue: null,
+                storageArea: localStorage,
+                url: window.location.href
+            }));
+        }
+
+        function addToLog(logId, message, type) {
+            const log = document.getElementById(logId);
+            const div = document.createElement('div');
+            div.className = 'update';
+            div.innerHTML = `<small>${new Date().toLocaleTimeString()}</small> - ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function updateStorageDisplay() {
+            const keys = Object.keys(localStorage).filter(key => 
+                key.includes('timetable') || key.includes('Updates')
+            );
+            document.getElementById('storageKeys').textContent = keys.join(', ') || 'None';
+        }
+
+        function loadExistingData() {
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            const currentTimetable = JSON.parse(localStorage.getItem('currentTimetable') || 'null');
+            
+            updates.forEach(update => {
+                if (update.affectedUsers.includes('student')) {
+                    addToLog('studentLog', `📨 ${update.message}`, 'student');
+                }
+                if (update.affectedUsers.includes('faculty')) {
+                    addToLog('facultyLog', `📨 ${update.message}`, 'faculty');
+                }
+            });
+            
+            if (currentTimetable) {
+                document.getElementById('studentTimetable').style.display = 'block';
+                document.getElementById('facultyTimetable').style.display = 'block';
+                document.getElementById('studentTimetableData').innerHTML = `
+                    <strong>Timetable ID:</strong> ${currentTimetable.result[0].timetableId}<br>
+                    <strong>Score:</strong> ${currentTimetable.result[0].score}<br>
+                    <strong>Schedule Items:</strong> ${currentTimetable.result[0].schedule.length}
+                `;
+                document.getElementById('facultyTimetableData').innerHTML = document.getElementById('studentTimetableData').innerHTML;
+            }
+        }
+
+        // Listen for storage changes
+        window.addEventListener('storage', function(e) {
+            console.log('Storage event received:', e.key, e.newValue);
+            
+            if (e.key === 'timetableUpdates' && e.newValue) {
+                const updates = JSON.parse(e.newValue);
+                const latestUpdate = updates[updates.length - 1];
+                
+                if (latestUpdate && Date.now() - latestUpdate.timestamp < 5000) {
+                    if (latestUpdate.affectedUsers.includes('student')) {
+                        addToLog('studentLog', `📨 LIVE: ${latestUpdate.message}`, 'student');
+                    }
+                    if (latestUpdate.affectedUsers.includes('faculty')) {
+                        addToLog('facultyLog', `📨 LIVE: ${latestUpdate.message}`, 'faculty');
+                    }
+                }
+            }
+            
+            if (e.key === 'currentTimetable' && e.newValue) {
+                const timetable = JSON.parse(e.newValue);
+                document.getElementById('studentTimetable').style.display = 'block';
+                document.getElementById('facultyTimetable').style.display = 'block';
+                document.getElementById('studentTimetableData').innerHTML = `
+                    <strong>🔄 LIVE UPDATE:</strong><br>
+                    <strong>Timetable ID:</strong> ${timetable.result[0].timetableId}<br>
+                    <strong>Score:</strong> ${timetable.result[0].score}<br>
+                    <strong>Schedule Items:</strong> ${timetable.result[0].schedule.length}
+                `;
+                document.getElementById('facultyTimetableData').innerHTML = document.getElementById('studentTimetableData').innerHTML;
+            }
+            
+            updateStorageDisplay();
+        });
+
+        // Initialize
+        window.addEventListener('load', function() {
+            loadExistingData();
+            updateStorageDisplay();
+        });
+    </script>
+</body>
+</html>

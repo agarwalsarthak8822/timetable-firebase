@@ -1,0 +1,88 @@
+
+/* Performance-optimized CSS */
+@layer utilities {
+  /* Critical CSS for above-the-fold content */
+  .critical-css {
+    /* Optimize font loading */
+    font-display: swap;
+    
+    /* Optimize rendering */
+    will-change: auto;
+    transform: translateZ(0);
+  }
+  
+  /* Optimize animations */
+  .optimized-animation {
+    /* Use transform and opacity for better performance */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* Optimize images */
+  .optimized-image {
+    /* Prevent layout shift */
+    aspect-ratio: attr(width) / attr(height);
+    
+    /* Optimize loading */
+    loading: lazy;
+    decoding: async;
+  }
+  
+  /* Optimize scrolling */
+  .optimized-scroll {
+    /* Enable hardware acceleration */
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Optimize text rendering */
+  .optimized-text {
+    /* Improve text rendering */
+    text-rendering: optimizeSpeed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Performance optimizations */
+* {
+  /* Optimize box model */
+  box-sizing: border-box;
+}
+
+html {
+  /* Optimize scrolling */
+  scroll-behavior: smooth;
+  
+  /* Optimize text rendering */
+  text-rendering: optimizeSpeed;
+}
+
+body {
+  /* Optimize rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+}
+
+/* Optimize images */
+img {
+  /* Prevent layout shift */
+  height: auto;
+  
+  /* Optimize loading */
+  loading: lazy;
+  decoding: async;
+}
+
+/* Optimize animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "..\\node_modules\\next\\dist\\client\\index.js -> ../pages/_app": {
+    "id": 90472,
+    "files": [
+      "static/chunks/472.2c08b965bd9148e2.js"
+    ]
+  },
+  "..\\node_modules\\next\\dist\\client\\index.js -> ../pages/_error": {
+    "id": 99341,
+    "files": [
+      "static/chunks/722.b7679d308778a1b3.js"
+    ]
+  },
+  "app\\assistant\\page.tsx -> @/components/assistant/assistant": {
+    "id": 11835,
+    "files": [
+      "static/chunks/835.fccffb850ed38e3c.js"
+    ]
+  },
+  "app\\page.tsx -> @/components/dashboard/class-heatmap": {
+    "id": 98861,
+    "files": [
+      "static/chunks/906.491ab5b9b0c48ccc.js",
+      "static/chunks/861.0eeba5cddef03357.js"
+    ]
+  },
+  "app\\page.tsx -> @/components/dashboard/weekly-overview-chart": {
+    "id": 43210,
+    "files": [
+      "static/chunks/906.491ab5b9b0c48ccc.js",
+      "static/chunks/210.5ddbb68e8d3d03c9.js"
+    ]
+  }
+}

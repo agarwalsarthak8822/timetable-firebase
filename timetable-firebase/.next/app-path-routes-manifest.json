@@ -1,0 +1,14 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/assistant/page": "/assistant",
+  "/classrooms/page": "/classrooms",
+  "/live-classes/page": "/live-classes",
+  "/faculty/page": "/faculty",
+  "/my-schedule/page": "/my-schedule",
+  "/page": "/",
+  "/login/page": "/login",
+  "/my-classes/page": "/my-classes",
+  "/settings/page": "/settings",
+  "/timetable/page": "/timetable"
+}

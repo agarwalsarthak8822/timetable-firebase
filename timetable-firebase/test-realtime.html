@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Timetable Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { border: 2px solid #ddd; margin: 20px 0; padding: 20px; border-radius: 8px; }
+        .admin { border-color: #f59e0b; background: #fef3c7; }
+        .student { border-color: #3b82f6; background: #dbeafe; }
+        .faculty { border-color: #10b981; background: #d1fae5; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .admin button { background: #f59e0b; color: white; }
+        .student button { background: #3b82f6; color: white; }
+        .faculty button { background: #10b981; color: white; }
+        .updates { margin-top: 15px; padding: 10px; background: white; border-radius: 4px; }
+        .update { padding: 8px; margin: 5px 0; border-left: 4px solid #6b7280; background: #f9fafb; }
+        .live-indicator { display: inline-block; width: 10px; height: 10px; background: #ef4444; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Real-Time Timetable Synchronization Test</h1>
+        <p><strong>Instructions:</strong> Open this page in multiple tabs, then test the real-time sync by clicking buttons below.</p>
+          
+        <div class="section admin">
+            <h2>👨‍💼 Admin Panel</h2>
+            <button onclick="publishTimetable()">📅 Publish New Timetable</button>
+            <button onclick="startLiveClass()">🔴 Start Live Class</button>
+            <button onclick="sendAnnouncement()">📢 Send Announcement</button>
+            <div class="updates" id="adminUpdates">
+                <strong>Published Updates:</strong>
+                <div id="adminLog"></div>
+            </div>
+        </div>
+
+        <div class="section student">
+            <h2>👨‍🎓 Student View</h2>
+            <button onclick="markAsRead('student')">✅ Mark Updates as Read</button>
+            <div class="updates" id="studentUpdates">
+                <strong>Received Updates:</strong>
+                <div id="studentLog"></div>
+            </div>
+        </div>
+
+        <div class="section faculty">
+            <h2>👩‍🏫 Faculty View</h2>
+            <button onclick="markAsRead('faculty')">✅ Mark Updates as Read</button>
+            <div class="updates" id="facultyUpdates">
+                <strong>Received Updates:</strong>
+                <div id="facultyLog"></div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <p><span class="live-indicator"></span> <strong>Real-Time Connection Active</strong></p>
+            <p><em>Changes will appear instantly across all tabs and user roles!</em></p>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the real-time timetable system
+        let updateCounter = 0;
+
+        function publishTimetable() {
+            const update = {
+                id: `timetable-${Date.now()}`,
+                type: 'timetable_change',
+                timestamp: Date.now(),
+                message: `New timetable published at ${new Date().toLocaleTimeString()}`,
+                affectedUsers: ['student', 'faculty'],
+                data: { subjects: ['Math', 'Physics', 'Chemistry', 'Computer Science'] }
+            };
+            
+            // Save to localStorage (simulating real-time system)
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(update);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            // Update admin log
+            addToLog('adminLog', `✅ Published: ${update.message}`, 'admin');
+            
+            // Trigger storage event for cross-tab sync
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'timetableUpdates',
+                newValue: JSON.stringify(updates)
+            }));
+        }
+
+        function startLiveClass() {
+            const liveClass = {
+                id: `live-${Date.now()}`,
+                type: 'live_class',
+                timestamp: Date.now(),
+                message: `Live class started: Computer Science in Room CS-101`,
+                affectedUsers: ['student', 'faculty'],
+                data: { subject: 'Computer Science', room: 'CS-101', faculty: 'Dr. Smith' }
+            };
+            
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(liveClass);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            addToLog('adminLog', `🔴 Started: ${liveClass.message}`, 'admin');
+            
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'timetableUpdates',
+                newValue: JSON.stringify(updates)
+            }));
+        }
+
+        function sendAnnouncement() {
+            const announcement = {
+                id: `announcement-${Date.now()}`,
+                type: 'announcement',
+                timestamp: Date.now(),
+                message: `Important: Please check your updated schedules`,
+                affectedUsers: ['student', 'faculty'],
+                data: { priority: 'high' }
+            };
+            
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.push(announcement);
+            localStorage.setItem('timetableUpdates', JSON.stringify(updates));
+            
+            addToLog('adminLog', `📢 Sent: ${announcement.message}`, 'admin');
+            
+            window.dispatchEvent(new StorageEvent('storage', {
+                key: 'timetableUpdates',
+                newValue: JSON.stringify(updates)
+            }));
+        }
+
+        function markAsRead(userType) {
+            const readUpdates = JSON.parse(localStorage.getItem(`${userType}ReadUpdates`) || '[]');
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            
+            updates.forEach(update => {
+                if (!readUpdates.includes(update.id)) {
+                    readUpdates.push(update.id);
+                }
+            });
+            
+            localStorage.setItem(`${userType}ReadUpdates`, JSON.stringify(readUpdates));
+            addToLog(`${userType}Log`, `✅ All updates marked as read`, userType);
+        }
+
+        function addToLog(logId, message, type) {
+            const log = document.getElementById(logId);
+            const div = document.createElement('div');
+            div.className = 'update';
+            div.innerHTML = `<small>${new Date().toLocaleTimeString()}</small> - ${message}`;
+            log.appendChild(div);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Listen for storage changes (cross-tab communication)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'timetableUpdates' && e.newValue) {
+                const updates = JSON.parse(e.newValue);
+                const latestUpdate = updates[updates.length - 1];
+                
+                if (latestUpdate && Date.now() - latestUpdate.timestamp < 5000) {
+                    // Show in student view
+                    if (latestUpdate.affectedUsers.includes('student')) {
+                        addToLog('studentLog', `📨 Received: ${latestUpdate.message}`, 'student');
+                    }
+                    
+                    // Show in faculty view
+                    if (latestUpdate.affectedUsers.includes('faculty')) {
+                        addToLog('facultyLog', `📨 Received: ${latestUpdate.message}`, 'faculty');
+                    }
+                }
+            }
+        });
+
+        // Load existing updates on page load
+        window.addEventListener('load', function() {
+            const updates = JSON.parse(localStorage.getItem('timetableUpdates') || '[]');
+            updates.forEach(update => {
+                if (update.affectedUsers.includes('student')) {
+                    addToLog('studentLog', `📨 ${update.message}`, 'student');
+                }
+                if (update.affectedUsers.includes('faculty')) {
+                    addToLog('facultyLog', `📨 ${update.message}`, 'faculty');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

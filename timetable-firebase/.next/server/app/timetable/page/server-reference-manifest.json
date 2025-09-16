@@ -1,0 +1,16 @@
+{
+  "node": {
+    "60e82e8a8d80760c4cf58115e4e077c1ab96dc6026": {
+      "workers": {
+        "app/timetable/page": {
+          "moduleId": "[project]/.next-internal/server/app/timetable/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/app/actions.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
+          "async": false
+        }
+      },
+      "layer": {
+        "app/timetable/page": "action-browser"
+      }
+    }
+  },
+  "edge": {}
+}
